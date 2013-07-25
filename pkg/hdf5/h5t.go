@@ -194,13 +194,13 @@ func (t *Datatype) Lock() error {
 
 // Returns the size of a datatype.
 // size_t H5Tget_size( hid_t dtype_id )
-func (t *Datatype) Size() int {
+func (t *Datatype) Size() uint {
 	return int(C.H5Tget_size(t.id))
 }
 
 // Sets the total size for an atomic datatype.
 // herr_t H5Tset_size( hid_t dtype_id, size_tsize )
-func (t *Datatype) SetSize(sz int) error {
+func (t *Datatype) SetSize(sz uint) error {
 	err := C.H5Tset_size(t.id, C.size_t(sz))
 	return togo_err(err)
 }
