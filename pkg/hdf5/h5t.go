@@ -195,7 +195,7 @@ func (t *Datatype) Lock() error {
 // Returns the size of a datatype.
 // size_t H5Tget_size( hid_t dtype_id )
 func (t *Datatype) Size() uint {
-	return int(C.H5Tget_size(t.id))
+	return uint(C.H5Tget_size(t.id))
 }
 
 // Sets the total size for an atomic datatype.
