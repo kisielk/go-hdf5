@@ -33,7 +33,7 @@ func (g *CommonFG) CreateGroup(name string) (*Group, error) {
 	if err := h5err(C.herr_t(int(hid))); err != nil {
 		return nil, err
 	}
-	group := &Group{CommonFG{Location{IDComponent{hid}}}}
+	group := &Group{CommonFG{Location{Identifier{hid}}}}
 	runtime.SetFinalizer(group, (*Group).finalizer)
 	return group, nil
 }
@@ -69,7 +69,7 @@ func (g *CommonFG) OpenGroup(name string) (*Group, error) {
 	if err := h5err(C.herr_t(int(hid))); err != nil {
 		return nil, err
 	}
-	group := &Group{CommonFG{Location{IDComponent{hid}}}}
+	group := &Group{CommonFG{Location{Identifier{hid}}}}
 	runtime.SetFinalizer(group, (*Group).finalizer)
 	return group, nil
 }
