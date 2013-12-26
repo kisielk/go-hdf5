@@ -19,7 +19,7 @@ type Table struct {
 }
 
 func newPacketTable(id C.hid_t) *Table {
-	t := &Table{Location{id}}
+	t := &Table{Location{Identifier{id}}}
 	runtime.SetFinalizer(t, (*Table).finalizer)
 	return t
 }

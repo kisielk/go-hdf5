@@ -80,22 +80,22 @@ var (
 	}
 )
 
-func openDatatype(loc_id C.hid_t, name string, tapl_id int) (*Datatype, error) {
+func OpenDatatype(c CommonFG, name string, tapl_id int) (*Datatype, error) {
 	c_name := C.CString(name)
 	defer C.free(unsafe.Pointer(c_name))
 
-	id := C.H5Topen2(C.hid_t(loc_id), c_name, C.hid_t(tapl_id))
+	id := C.H5Topen2(C.hid_t(c.id), c_name, C.hid_t(tapl_id))
 	err := h5err(C.herr_t(id))
 	if err != nil {
 		return nil, err
 	}
-	dt := &Datatype{Location{id}, nil}
+	dt := &Datatype{Location{Identifier{id}}, nil}
 	runtime.SetFinalizer(dt, (*Datatype).finalizer)
 	return dt, err
 }
 
 func NewDatatype(id C.hid_t, rt reflect.Type) *Datatype {
-	t := &Datatype{Location{id}, rt}
+	t := &Datatype{Location{Identifier{id}}, rt}
 	runtime.SetFinalizer(t, (*Datatype).finalizer)
 	return t
 }
@@ -182,7 +182,7 @@ type ArrayType struct {
 }
 
 func new_array_type(id C.hid_t) *ArrayType {
-	t := &ArrayType{Datatype{Location{id}, nil}}
+	t := &ArrayType{Datatype{Location{Identifier{id}}, nil}}
 	return t
 }
 
@@ -227,7 +227,7 @@ func NewVarLenType(base_type *Datatype) (*VarLenType, error) {
 	if err != nil {
 		return nil, err
 	}
-	t := &VarLenType{Datatype{Location{id}, nil}}
+	t := &VarLenType{Datatype{Location{Identifier{id}}, nil}}
 	runtime.SetFinalizer(t, (*VarLenType).finalizer)
 	return t, err
 }
