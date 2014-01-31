@@ -40,10 +40,6 @@ func (s *Dataset) finalizer() {
 	}
 }
 
-func (s *Dataset) Id() int {
-	return int(s.id)
-}
-
 // Close releases and terminates access to a dataset.
 func (s *Dataset) Close() error {
 	if s.id > 0 {
@@ -64,7 +60,12 @@ func (s *Dataset) Space() *Dataspace {
 }
 
 // Read reads raw data from a dataset into a buffer.
-func (s *Dataset) Read(data interface{}, dtype *Datatype) error {
+func (s *Dataset) Read(data interface{}) error {
+	dtype, err := s.Datatype()
+	if err != nil {
+		return err
+	}
+
 	var addr uintptr
 	v := reflect.ValueOf(data)
 
@@ -85,12 +86,17 @@ func (s *Dataset) Read(data interface{}, dtype *Datatype) error {
 	}
 
 	rc := C.H5Dread(s.id, dtype.id, 0, 0, 0, unsafe.Pointer(addr))
-	err := h5err(rc)
+	err = h5err(rc)
 	return err
 }
 
 // Write writes raw data from a buffer to a dataset.
-func (s *Dataset) Write(data interface{}, dtype *Datatype) error {
+func (s *Dataset) Write(data interface{}) error {
+	dtype, err := s.Datatype()
+	if err != nil {
+		return err
+	}
+
 	var addr uintptr
 	v := reflect.ValueOf(data)
 	switch v.Kind() {
@@ -110,6 +116,15 @@ func (s *Dataset) Write(data interface{}, dtype *Datatype) error {
 	}
 
 	rc := C.H5Dwrite(s.id, dtype.id, 0, 0, 0, unsafe.Pointer(addr))
-	err := h5err(rc)
+	err = h5err(rc)
 	return err
+}
+
+// Datatype returns the HDF5 Datatype of the Dataset
+func (s *Dataset) Datatype() (*Datatype, error) {
+	dtype_id := C.H5Dget_type(s.id)
+	if dtype_id < 0 {
+		return nil, fmt.Errorf("couldn't open Datatype from Dataset %q", s.Name())
+	}
+	return copyDatatype(dtype_id)
 }
