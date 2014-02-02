@@ -111,8 +111,8 @@ func (f *File) Close() error {
 
 // Flushes all buffers associated with a file to disk.
 // herr_t H5Fflush(hid_t object_id, H5F_scope_t scope )
-func (f *File) Flush(scope Scope) error {
-	return h5err(C.H5Fflush(f.id, C.H5F_scope_t(scope)))
+func (f *File) Flush() error {
+	return h5err(C.H5Fflush(f.id, C.H5F_scope_t(F_SCOPE_LOCAL)))
 }
 
 // FIXME

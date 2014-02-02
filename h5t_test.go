@@ -22,17 +22,19 @@ func TestSimpleDatatypes(t *testing.T) {
 		string(""),
 	}
 
-	for test := range tests {
-		NewDatatypeFromValue(test)
+	for _, test := range tests {
+		if _, err := NewDatatypeFromValue(test); err != nil {
+			t.Error(err)
+		}
 	}
 }
 
 // Test for array datatypes. Checks that the number of dimensions is correct.
 func TestArrayDatatype(t *testing.T) {
 	tests := map[int]interface{}{
-		1: [8]int{1, 1, 2, 3, 5, 8, 13},
-		2: [2][2]int{{1, 2}, {3, 4}},
-		3: [2][2][2]int{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+		1: [8]uint8{1, 1, 2, 3, 5, 8, 13},
+		2: [2][2]int32{{1, 2}, {3, 4}},
+		3: [2][2][2]int64{{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
 	}
 
 	for dims, val := range tests {

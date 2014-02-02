@@ -19,8 +19,8 @@ func TestDataspace(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if ds.SimpleExtentType() != class {
-			t.Errorf("Dataspace class mismatch: %q != %q", ds.SimpleExtentType(), class)
+		if ds.Class() != class {
+			t.Errorf("Dataspace class mismatch: %q != %q", ds.Class(), class)
 		}
 
 		// Copy the Dataspace
@@ -68,8 +68,8 @@ func TestSimpleDataspace(t *testing.T) {
 		t.Errorf("wrong number of dimensions: got %d, want %d", ds.SimpleExtentNDims(), 3)
 	}
 
-	if ds.SimpleExtentType() != S_SIMPLE {
-		t.Errorf("wrong extent type: got %d, want %d", ds.SimpleExtentType(), S_SIMPLE)
+	if ds.Class() != S_SIMPLE {
+		t.Errorf("wrong extent type: got %d, want %d", ds.Class(), S_SIMPLE)
 	}
 
 	// npoints should be 3 * 3 * 3

@@ -142,7 +142,7 @@ func (s *Dataspace) SimpleExtentNPoints() int {
 	return int(C.H5Sget_simple_extent_npoints(s.id))
 }
 
-// SimpleExtentType returns the current class of a dataspace.
-func (s *Dataspace) SimpleExtentType() SpaceClass {
+// Class returns the current class of a dataspace.
+func (s *Dataspace) Class() SpaceClass {
 	return SpaceClass(C.H5Sget_simple_extent_type(s.id))
 }
