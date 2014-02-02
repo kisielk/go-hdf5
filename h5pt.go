@@ -177,13 +177,13 @@ func createTableFrom(id C.hid_t, name string, dtype interface{}, chunkSize, comp
 	var err error
 	switch dt := dtype.(type) {
 	case reflect.Type:
-		if hdfDtype, err := NewDataTypeFromType(dt); err == nil {
+		if hdfDtype, err := NewDatatypeFromType(dt); err == nil {
 			return createTable(id, name, hdfDtype, chunkSize, compression)
 		}
 	case *Datatype:
 		return createTable(id, name, dt, chunkSize, compression)
 	default:
-		if hdfDtype, err := NewDataTypeFromType(reflect.TypeOf(dtype)); err == nil {
+		if hdfDtype, err := NewDatatypeFromType(reflect.TypeOf(dtype)); err == nil {
 			return createTable(id, name, hdfDtype, chunkSize, compression)
 		}
 	}

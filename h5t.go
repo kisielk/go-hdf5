@@ -36,54 +36,40 @@ const (
 
 // list of go types
 var (
-	_go_string_t reflect.Type = reflect.TypeOf(string(""))
-	_go_int_t    reflect.Type = reflect.TypeOf(int(0))
-	_go_int8_t   reflect.Type = reflect.TypeOf(int8(0))
-	_go_int16_t  reflect.Type = reflect.TypeOf(int16(0))
-	_go_int32_t  reflect.Type = reflect.TypeOf(int32(0))
-	_go_int64_t  reflect.Type = reflect.TypeOf(int64(0))
-	_go_uint_t   reflect.Type = reflect.TypeOf(uint(0))
-	_go_uint8_t  reflect.Type = reflect.TypeOf(uint8(0))
-	_go_uint16_t reflect.Type = reflect.TypeOf(uint16(0))
-	_go_uint32_t reflect.Type = reflect.TypeOf(uint32(0))
-	_go_uint64_t reflect.Type = reflect.TypeOf(uint64(0))
+	goStringType reflect.Type = reflect.TypeOf(string(""))
+	goIntType    reflect.Type = reflect.TypeOf(int(0))
+	goInt8Type   reflect.Type = reflect.TypeOf(int8(0))
+	goInt16Type  reflect.Type = reflect.TypeOf(int16(0))
+	goInt32Type  reflect.Type = reflect.TypeOf(int32(0))
+	goInt64Type  reflect.Type = reflect.TypeOf(int64(0))
+	goUintType   reflect.Type = reflect.TypeOf(uint(0))
+	goUint8Type  reflect.Type = reflect.TypeOf(uint8(0))
+	goUint16Type reflect.Type = reflect.TypeOf(uint16(0))
+	goUint32Type reflect.Type = reflect.TypeOf(uint32(0))
+	goUint64Type reflect.Type = reflect.TypeOf(uint64(0))
 
-	_go_float32_t reflect.Type = reflect.TypeOf(float32(0))
-	_go_float64_t reflect.Type = reflect.TypeOf(float64(0))
+	goFloat32Type reflect.Type = reflect.TypeOf(float32(0))
+	goFloat64Type reflect.Type = reflect.TypeOf(float64(0))
 
-	_go_array_t reflect.Type = reflect.TypeOf([1]int{0})
-	_go_slice_t reflect.Type = reflect.TypeOf([]int{0})
+	goArrayType reflect.Type = reflect.TypeOf([1]int{0})
+	goSliceType reflect.Type = reflect.TypeOf([]int{0})
 
-	_go_struct_t reflect.Type = reflect.TypeOf(struct{}{})
+	goStructType reflect.Type = reflect.TypeOf(struct{}{})
 
-	_go_ptr_t reflect.Type = reflect.PtrTo(_go_int_t)
+	goPtrType reflect.Type = reflect.PtrTo(goIntType)
+
+	goBoolType reflect.Type = reflect.TypeOf(true)
 )
 
-type typeMap map[TypeClass]reflect.Type
+type typeSet map[TypeClass]struct{}
 
 var (
-	// Mapping of TypeClass to reflect.Type
-	typeClassToGoType typeMap = typeMap{
-		T_NO_CLASS:  nil,
-		T_INTEGER:   _go_int_t,
-		T_FLOAT:     _go_float32_t,
-		T_TIME:      nil,
-		T_STRING:    _go_string_t,
-		T_BITFIELD:  nil,
-		T_OPAQUE:    nil,
-		T_COMPOUND:  _go_struct_t,
-		T_REFERENCE: _go_ptr_t,
-		T_ENUM:      _go_int_t,
-		T_VLEN:      _go_slice_t,
-		T_ARRAY:     _go_array_t,
-	}
-
-	parametricTypes typeMap = typeMap{
+	parametricTypes typeSet = typeSet{
 		// Only these types can be used with CreateDatatype
-		T_COMPOUND: _go_struct_t,
-		T_ENUM:     _go_int_t,
-		T_OPAQUE:   nil,
-		T_STRING:   _go_string_t,
+		T_COMPOUND: struct{}{},
+		T_ENUM:     struct{}{},
+		T_OPAQUE:   struct{}{},
+		T_STRING:   struct{}{},
 	}
 )
 
@@ -135,7 +121,71 @@ func (t *Datatype) finalizer() {
 
 // GoType returns the reflect.Type associated with the Datatype's TypeClass
 func (t *Datatype) GoType() reflect.Type {
-	return typeClassToGoType[t.Class()]
+	switch t.Class() {
+	case T_NO_CLASS:
+		return nil
+	case T_INTEGER, T_ENUM:
+		sign := int(C.H5Tget_sign(t.id))
+		if sign < 0 {
+			panic("Datatype class is T_INTEGER, but couldn't determine sign")
+		}
+		switch t.Size() {
+		case 1:
+			if sign > 0 {
+				return goInt8Type
+			} else {
+				return goUint8Type
+			}
+		case 2:
+			if sign > 0 {
+				return goInt16Type
+			} else {
+				return goUint16Type
+			}
+		case 4:
+			if sign > 0 {
+				return goInt32Type
+			} else {
+				return goUint32Type
+			}
+		case 8:
+			if sign > 0 {
+				return goInt64Type
+			} else {
+				return goUint64Type
+			}
+		default:
+			panic("bad integer size")
+		}
+	case T_FLOAT:
+		switch t.Size() {
+		case 4:
+			return goFloat32Type
+		case 8:
+			return goFloat64Type
+		default:
+			// Should never happen
+			panic("bad float size")
+		}
+	case T_TIME, T_BITFIELD, T_OPAQUE:
+		// These cases, especially T_TIME, can't be supported in any
+		// meaningful way. It's best for the library just to return
+		// the raw bytes in the dataset.
+		return goUint8Type
+	case T_STRING:
+		return goStringType
+	case T_COMPOUND:
+		return goStructType
+	case T_REFERENCE:
+		return goPtrType
+	case T_VLEN:
+		return goSliceType
+	case T_ARRAY:
+		return goArrayType
+	default:
+		// Should never happen
+		panic("unknown TypeClass")
+	}
 }
 
 // Close releases a datatype.
@@ -347,11 +397,11 @@ func (t *OpaqueDatatype) Tag() string {
 
 // NewDatatypeFromValue creates  a datatype from a value in an interface.
 func NewDatatypeFromValue(v interface{}) (*Datatype, error) {
-	return NewDataTypeFromType(reflect.TypeOf(v))
+	return NewDatatypeFromType(reflect.TypeOf(v))
 }
 
 // NewDatatypeFromType creates a new Datatype from a reflect.Type.
-func NewDataTypeFromType(t reflect.Type) (*Datatype, error) {
+func NewDatatypeFromType(t reflect.Type) (*Datatype, error) {
 
 	var dt *Datatype = nil
 	var err error
@@ -359,7 +409,26 @@ func NewDataTypeFromType(t reflect.Type) (*Datatype, error) {
 	switch t.Kind() {
 
 	case reflect.Int:
-		dt, err = T_NATIVE_INT.Copy()
+		/* Special case logic is needed here as T_NATIVE_INT size can disagree
+		with Go's int size. It's best to be explicit about type sizes
+		when working with go-hdf5, to avoid writing implementation-dependent
+		code. */
+
+		if t.Bits() == 64 {
+			// Commonest case, assuming 64 bit platforms running Go >=1.1.
+			dt, err = T_NATIVE_INT64.Copy()
+		} else if t.Bits() == 32 {
+			// Less likely, but there are probably people running Go 1.0 or
+			// or 32 bit.
+			dt, err = T_NATIVE_INT32.Copy()
+		} else {
+			/* You are from the future or possibly an alternate dimension.
+			(•_• )
+			( •_•)>⌐■-■
+			(⌐■_■)
+			*/
+			panic("implementation int size is not 32 or 64 bits")
+		}
 
 	case reflect.Int8:
 		dt, err = T_NATIVE_INT8.Copy()
@@ -373,8 +442,14 @@ func NewDataTypeFromType(t reflect.Type) (*Datatype, error) {
 	case reflect.Int64:
 		dt, err = T_NATIVE_INT64.Copy()
 
-	case reflect.Uint:
-		dt, err = T_NATIVE_UINT.Copy()
+	case reflect.Uint: // Similar to Int, see above.
+		if t.Bits() == 64 {
+			dt, err = T_NATIVE_UINT64.Copy()
+		} else if t.Bits() == 32 {
+			dt, err = T_NATIVE_UINT32.Copy()
+		} else {
+			panic("implementation uint size is not 32 or 64 bits")
+		}
 
 	case reflect.Uint8:
 		dt, err = T_NATIVE_UINT8.Copy()
@@ -398,7 +473,7 @@ func NewDataTypeFromType(t reflect.Type) (*Datatype, error) {
 		dt, err = T_GO_STRING.Copy()
 
 	case reflect.Array:
-		elem_type, err := NewDataTypeFromType(t.Elem())
+		elem_type, err := NewDatatypeFromType(t.Elem())
 		if err != nil {
 			return nil, err
 		}
@@ -426,7 +501,7 @@ func NewDataTypeFromType(t reflect.Type) (*Datatype, error) {
 		for i := 0; i < n; i++ {
 			f := t.Field(i)
 			var field_dt *Datatype = nil
-			field_dt, err = NewDataTypeFromType(f.Type)
+			field_dt, err = NewDatatypeFromType(f.Type)
 			if err != nil {
 				return nil, err
 			}

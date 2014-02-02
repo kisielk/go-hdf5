@@ -20,7 +20,7 @@ func TestFile(t *testing.T) {
 	if name := f.Name(); name != "/" {
 		t.Fatalf("Name() have %v, want %v", name, FNAME)
 	}
-	if err := f.Flush(F_SCOPE_GLOBAL); err != nil {
+	if err := f.Flush(); err != nil {
 		t.Fatalf("Flush() failed: %s", err)
 	}
 	if !IsHDF5(FNAME) {
